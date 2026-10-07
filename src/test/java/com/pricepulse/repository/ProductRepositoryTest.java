@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,9 +26,10 @@ class ProductRepositoryTest {
 
     @Test
     void saveAndFindById() {
+        // Unique URL so the test never collides with real rows in the shared development database.
         Product product = new Product(
                 "Sony WH-1000XM5 Headphones",
-                "https://example.com/sony-wh-1000xm5",
+                "https://example.com/test-" + UUID.randomUUID(),
                 new BigDecimal("29990.00"),
                 new BigDecimal("25000.00"),
                 "INR");

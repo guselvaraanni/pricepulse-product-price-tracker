@@ -4,6 +4,7 @@ import com.pricepulse.dto.CreateProductRequest;
 import com.pricepulse.dto.ProductResponse;
 import com.pricepulse.dto.UpdateProductRequest;
 import com.pricepulse.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,7 +32,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductResponse> createProduct(@RequestBody CreateProductRequest request) {
+    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
         ProductResponse created = productService.createProduct(request);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -53,7 +54,8 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ProductResponse updateProduct(@PathVariable Long id, @RequestBody UpdateProductRequest request) {
+    public ProductResponse updateProduct(@PathVariable Long id,
+                                         @Valid @RequestBody UpdateProductRequest request) {
         return productService.updateProduct(id, request);
     }
 
