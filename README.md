@@ -307,9 +307,35 @@ Each stage is one Git commit.
 ### Prerequisites
 
 - JDK 21
+- PostgreSQL (developed against PostgreSQL 18)
 - No separate Maven install needed. The project includes the Maven Wrapper (`mvnw` / `mvnw.cmd`).
 
+### Database setup
+
+Create the database once:
+
+```sql
+CREATE DATABASE pricepulse;
+```
+
+Tables are created by Hibernate on startup (`spring.jpa.hibernate.ddl-auto=update`). That setting is for development only.
+
+### Configuration
+
+Copy `.env.example` to `.env` in the project root and fill in your values:
+
+```
+SERVER_PORT=8080
+DB_URL=jdbc:postgresql://localhost:5432/pricepulse
+DB_USERNAME=postgres
+DB_PASSWORD=change_me
+```
+
+`.env` is git-ignored. Spring Boot loads it through `spring.config.import`. Real OS environment variables with the same names take precedence.
+
 ### Build and run
+
+The build runs tests against the database, so PostgreSQL must be running.
 
 ```bash
 # Windows
@@ -321,11 +347,7 @@ mvnw.cmd spring-boot:run
 ./mvnw spring-boot:run
 ```
 
-The application starts on port `8080`. If that port is already in use, override it at startup:
-
-```bash
-mvnw.cmd spring-boot:run -Dspring-boot.run.arguments=--server.port=8082
-```
+The application starts on `SERVER_PORT` (default `8080`).
 
 ### Health check
 
@@ -334,5 +356,3 @@ GET http://localhost:8080/api/ping
 → 200 OK
 pong
 ```
-
-PostgreSQL setup instructions will be added in Stage 2.
