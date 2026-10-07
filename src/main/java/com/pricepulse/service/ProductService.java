@@ -3,9 +3,11 @@ package com.pricepulse.service;
 import com.pricepulse.dto.CreateProductRequest;
 import com.pricepulse.dto.ProductResponse;
 import com.pricepulse.dto.UpdateProductRequest;
+import com.pricepulse.entity.PriceHistory;
 import com.pricepulse.entity.Product;
 import com.pricepulse.exception.DuplicateProductUrlException;
 import com.pricepulse.exception.ProductNotFoundException;
+import com.pricepulse.repository.PriceHistoryRepository;
 import com.pricepulse.repository.ProductRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,15 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final PriceHistoryRepository priceHistoryRepository;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository,
+                          PriceHistoryRepository priceHistoryRepository) {
         this.productRepository = productRepository;
+        this.priceHistoryRepository = priceHistoryRepository;
     }
 
+    // The initial price is also the first history entry, so the history always explains the current price.
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
         if (productRepository.existsByProductUrl(request.productUrl())) {
@@ -34,8 +40,11 @@ public class ProductService {
                 request.currentPrice(),
                 request.targetPrice(),
                 request.currency());
+        Product saved = productRepository.save(product);
 
-        return ProductResponse.from(productRepository.save(product));
+        priceHistoryRepository.save(new PriceHistory(saved, saved.getCurrentPrice(), saved.getCreatedAt()));
+
+        return ProductResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

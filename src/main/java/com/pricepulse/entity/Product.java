@@ -1,16 +1,21 @@
 package com.pricepulse.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -43,6 +48,10 @@ public class Product {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    // REMOVE only: history is created through PriceHistoryRepository, but has no meaning once its product is deleted.
+    @OneToMany(mappedBy = "product", cascade = CascadeType.REMOVE)
+    private List<PriceHistory> priceHistory = new ArrayList<>();
 
     // Required by JPA: Hibernate instantiates entities through a no-arg constructor.
     protected Product() {
@@ -94,6 +103,11 @@ public class Product {
         return currentPrice;
     }
 
+    // The only way to change the price, so every change can be paired with a PriceHistory record.
+    public void updateCurrentPrice(BigDecimal newPrice) {
+        this.currentPrice = newPrice;
+    }
+
     public BigDecimal getTargetPrice() {
         return targetPrice;
     }
@@ -124,5 +138,10 @@ public class Product {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    // Read-only view: callers must not add or remove history through the product.
+    public List<PriceHistory> getPriceHistory() {
+        return Collections.unmodifiableList(priceHistory);
     }
 }
