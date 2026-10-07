@@ -1,0 +1,83 @@
+package com.pricepulse.service;
+
+import com.pricepulse.dto.CreateProductRequest;
+import com.pricepulse.dto.ProductResponse;
+import com.pricepulse.dto.UpdateProductRequest;
+import com.pricepulse.entity.Product;
+import com.pricepulse.exception.DuplicateProductUrlException;
+import com.pricepulse.exception.ProductNotFoundException;
+import com.pricepulse.repository.ProductRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    @Transactional
+    public ProductResponse createProduct(CreateProductRequest request) {
+        if (productRepository.existsByProductUrl(request.productUrl())) {
+            throw new DuplicateProductUrlException(request.productUrl());
+        }
+
+        Product product = new Product(
+                request.name(),
+                request.productUrl(),
+                request.currentPrice(),
+                request.targetPrice(),
+                request.currency());
+
+        return ProductResponse.from(productRepository.save(product));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findAll(Sort.by("id")).stream()
+                .map(ProductResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ProductResponse getProduct(Long id) {
+        return ProductResponse.from(findProductOrThrow(id));
+    }
+
+    @Transactional
+    public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
+        Product product = findProductOrThrow(id);
+
+        if (productRepository.existsByProductUrlAndIdNot(request.productUrl(), id)) {
+            throw new DuplicateProductUrlException(request.productUrl());
+        }
+
+        product.setName(request.name());
+        product.setProductUrl(request.productUrl());
+        product.setTargetPrice(request.targetPrice());
+        product.setCurrency(request.currency());
+        product.setActive(request.active());
+
+        // Flush now so @PreUpdate sets updatedAt before we build the response.
+        return ProductResponse.from(productRepository.saveAndFlush(product));
+    }
+
+    @Transactional
+    public void deleteProduct(Long id) {
+        if (!productRepository.existsById(id)) {
+            throw new ProductNotFoundException(id);
+        }
+        productRepository.deleteById(id);
+    }
+
+    private Product findProductOrThrow(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+    }
+}
