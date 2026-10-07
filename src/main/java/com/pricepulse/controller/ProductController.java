@@ -1,6 +1,7 @@
 package com.pricepulse.controller;
 
 import com.pricepulse.dto.CreateProductRequest;
+import com.pricepulse.dto.PriceDropResponse;
 import com.pricepulse.dto.ProductResponse;
 import com.pricepulse.dto.UpdateProductRequest;
 import com.pricepulse.service.ProductService;
@@ -57,6 +58,11 @@ public class ProductController {
     public ProductResponse updateProduct(@PathVariable Long id,
                                          @Valid @RequestBody UpdateProductRequest request) {
         return productService.updateProduct(id, request);
+    }
+
+    @GetMapping("/{id}/price-drop")
+    public PriceDropResponse getPriceDropStatus(@PathVariable Long id) {
+        return productService.getPriceDropStatus(id);
     }
 
     @DeleteMapping("/{id}")

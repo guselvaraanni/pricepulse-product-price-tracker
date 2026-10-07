@@ -1,5 +1,6 @@
 package com.pricepulse.entity;
 
+import com.pricepulse.util.MoneyUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,7 +40,7 @@ public class PriceHistory {
 
     public PriceHistory(Product product, BigDecimal price, LocalDateTime recordedAt) {
         this.product = product;
-        this.price = price;
+        this.price = MoneyUtils.normalize(price);
         this.recordedAt = recordedAt;
     }
 

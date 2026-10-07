@@ -1,5 +1,6 @@
 package com.pricepulse.entity;
 
+import com.pricepulse.util.MoneyUtils;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -61,8 +62,8 @@ public class Product {
                    BigDecimal targetPrice, String currency) {
         this.name = name;
         this.productUrl = productUrl;
-        this.currentPrice = currentPrice;
-        this.targetPrice = targetPrice;
+        this.currentPrice = MoneyUtils.normalize(currentPrice);
+        this.targetPrice = MoneyUtils.normalize(targetPrice);
         this.currency = currency;
         this.active = true;
     }
@@ -105,7 +106,7 @@ public class Product {
 
     // The only way to change the price, so every change can be paired with a PriceHistory record.
     public void updateCurrentPrice(BigDecimal newPrice) {
-        this.currentPrice = newPrice;
+        this.currentPrice = MoneyUtils.normalize(newPrice);
     }
 
     public BigDecimal getTargetPrice() {
@@ -113,7 +114,7 @@ public class Product {
     }
 
     public void setTargetPrice(BigDecimal targetPrice) {
-        this.targetPrice = targetPrice;
+        this.targetPrice = MoneyUtils.normalize(targetPrice);
     }
 
     public String getCurrency() {

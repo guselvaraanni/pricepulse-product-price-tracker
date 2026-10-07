@@ -1,6 +1,7 @@
 package com.pricepulse.service;
 
 import com.pricepulse.dto.CreateProductRequest;
+import com.pricepulse.dto.PriceDropResponse;
 import com.pricepulse.dto.ProductResponse;
 import com.pricepulse.dto.UpdateProductRequest;
 import com.pricepulse.entity.PriceHistory;
@@ -9,10 +10,12 @@ import com.pricepulse.exception.DuplicateProductUrlException;
 import com.pricepulse.exception.ProductNotFoundException;
 import com.pricepulse.repository.PriceHistoryRepository;
 import com.pricepulse.repository.ProductRepository;
+import com.pricepulse.util.MoneyUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -75,6 +78,27 @@ public class ProductService {
 
         // Flush now so @PreUpdate sets updatedAt before we build the response.
         return ProductResponse.from(productRepository.saveAndFlush(product));
+    }
+
+    @Transactional(readOnly = true)
+    public PriceDropResponse getPriceDropStatus(Long id) {
+        Product product = findProductOrThrow(id);
+        BigDecimal currentPrice = product.getCurrentPrice();
+        BigDecimal targetPrice = product.getTargetPrice();
+
+        // compareTo, not equals: equals also compares scale, so 800.0 would not equal 800.00.
+        boolean targetReached = currentPrice.compareTo(targetPrice) <= 0;
+        BigDecimal amountAboveTarget = targetReached
+                ? MoneyUtils.normalize(BigDecimal.ZERO)
+                : currentPrice.subtract(targetPrice);
+
+        return new PriceDropResponse(
+                product.getId(),
+                currentPrice,
+                targetPrice,
+                product.getCurrency(),
+                targetReached,
+                amountAboveTarget);
     }
 
     @Transactional
