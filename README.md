@@ -46,7 +46,7 @@ PricePulse solves this by storing each product's **current price**, a **target p
 | Area | Technology |
 |------|------------|
 | Language | Java 21, SQL |
-| Framework | Spring Boot 3.x (Spring MVC, Spring Data JPA, Bean Validation) |
+| Framework | Spring Boot 3.5 (Spring MVC, Spring Data JPA, Bean Validation) |
 | ORM | Hibernate (the JPA implementation bundled with Spring Data JPA) |
 | Database | PostgreSQL |
 | Build tool | Maven |
@@ -304,4 +304,35 @@ Each stage is one Git commit.
 
 ## Running Locally
 
-Setup instructions (JDK 21, PostgreSQL database creation, configuration and run commands) will be added in Stage 1 and Stage 2, once there is something to run.
+### Prerequisites
+
+- JDK 21
+- No separate Maven install needed. The project includes the Maven Wrapper (`mvnw` / `mvnw.cmd`).
+
+### Build and run
+
+```bash
+# Windows
+mvnw.cmd clean package
+mvnw.cmd spring-boot:run
+
+# macOS / Linux
+./mvnw clean package
+./mvnw spring-boot:run
+```
+
+The application starts on port `8080`. If that port is already in use, override it at startup:
+
+```bash
+mvnw.cmd spring-boot:run -Dspring-boot.run.arguments=--server.port=8082
+```
+
+### Health check
+
+```
+GET http://localhost:8080/api/ping
+→ 200 OK
+pong
+```
+
+PostgreSQL setup instructions will be added in Stage 2.
