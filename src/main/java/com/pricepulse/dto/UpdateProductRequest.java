@@ -9,7 +9,9 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-// currentPrice is intentionally absent: price changes go through price recording, not product updates.
+// Intentionally absent:
+// - currentPrice: price changes go through price recording, not product updates.
+// - currency: fixed at creation, otherwise existing history prices would silently change meaning.
 public record UpdateProductRequest(
 
         @NotBlank(message = "Product name must not be blank")
@@ -26,10 +28,6 @@ public record UpdateProductRequest(
         @Digits(integer = 10, fraction = 2,
                 message = "Target price must have at most 10 digits and 2 decimal places")
         BigDecimal targetPrice,
-
-        @NotBlank(message = "Currency must not be blank")
-        @Pattern(regexp = "^[A-Z]{3}$", message = "Currency must be a 3-letter uppercase ISO code such as INR")
-        String currency,
 
         @NotNull(message = "Active flag is required")
         Boolean active) {

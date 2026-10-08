@@ -38,7 +38,7 @@ public class Product {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal targetPrice;
 
-    @Column(nullable = false, length = 3)
+    @Column(nullable = false, length = 3, updatable = false)
     private String currency;
 
     @Column(nullable = false)
@@ -119,10 +119,6 @@ public class Product {
 
     public String getCurrency() {
         return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
     }
 
     public boolean isActive() {

@@ -1,5 +1,6 @@
 package com.pricepulse.exception;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.pricepulse.dto.ApiErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        if (ex.getCause() instanceof UnrecognizedPropertyException unknownField) {
+            return buildResponse(HttpStatus.BAD_REQUEST,
+                    "Unknown field '" + unknownField.getPropertyName() + "' in request body");
+        }
         return buildResponse(HttpStatus.BAD_REQUEST, "Request body is missing, malformed, or has a field of the wrong type");
     }
 

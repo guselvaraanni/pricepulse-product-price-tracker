@@ -73,7 +73,6 @@ public class ProductService {
         product.setName(request.name());
         product.setProductUrl(request.productUrl());
         product.setTargetPrice(request.targetPrice());
-        product.setCurrency(request.currency());
         product.setActive(request.active());
 
         // Flush now so @PreUpdate sets updatedAt before we build the response.
@@ -103,10 +102,7 @@ public class ProductService {
 
     @Transactional
     public void deleteProduct(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw new ProductNotFoundException(id);
-        }
-        productRepository.deleteById(id);
+        productRepository.delete(findProductOrThrow(id));
     }
 
     private Product findProductOrThrow(Long id) {
