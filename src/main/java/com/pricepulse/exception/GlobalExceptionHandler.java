@@ -52,8 +52,7 @@ public class GlobalExceptionHandler {
     // Constraint violations on @RequestParam / @PathVariable values, e.g. ?recent=0.
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ApiErrorResponse> handleParameterValidationErrors(HandlerMethodValidationException ex) {
-        String message = ex.getAllValidationResults().stream()
-                .flatMap(result -> result.getResolvableErrors().stream())
+        String message = ex.getAllErrors().stream()
                 .map(MessageSourceResolvable::getDefaultMessage)
                 .sorted()
                 .collect(Collectors.joining("; "));
