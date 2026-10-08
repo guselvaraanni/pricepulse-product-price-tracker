@@ -2,7 +2,9 @@ package com.pricepulse.service;
 
 import com.pricepulse.dto.PriceAnalysisResponse;
 import com.pricepulse.dto.PriceHistoryResponse;
+import com.pricepulse.dto.PriceTrendResponse;
 import com.pricepulse.entity.PriceHistory;
+import com.pricepulse.entity.PriceMovement;
 import com.pricepulse.entity.Product;
 import com.pricepulse.exception.ProductNotFoundException;
 import com.pricepulse.repository.PriceHistoryRepository;
@@ -93,6 +95,79 @@ class PriceAnalysisServiceTest {
     }
 
     @Test
+    void trendShowsDecreaseFromPreviousPrice() {
+        givenChronologicalPrices("1200.00", "1000.00", "800.00");
+
+        PriceTrendResponse trend = priceAnalysisService.analyzePriceTrend(1L);
+
+        assertThat(trend.currentPrice()).isEqualByComparingTo("800.00");
+        assertThat(trend.previousPrice()).isEqualByComparingTo("1000.00");
+        assertThat(trend.direction()).isEqualTo(PriceMovement.DECREASE);
+        assertThat(trend.changeAmount()).isEqualByComparingTo("-200.00");
+        assertThat(trend.changePercent()).isEqualByComparingTo("-20.00");
+        assertThat(trend.lowestPrice()).isEqualByComparingTo("800.00");
+        assertThat(trend.highestPrice()).isEqualByComparingTo("1200.00");
+        assertThat(trend.averagePrice()).isEqualByComparingTo("1000.00");
+    }
+
+    @Test
+    void trendShowsIncreaseFromPreviousPrice() {
+        givenChronologicalPrices("800.00", "900.00");
+
+        PriceTrendResponse trend = priceAnalysisService.analyzePriceTrend(1L);
+
+        assertThat(trend.direction()).isEqualTo(PriceMovement.INCREASE);
+        assertThat(trend.changeAmount()).isEqualByComparingTo("100.00");
+        assertThat(trend.changePercent()).isEqualByComparingTo("12.50");
+    }
+
+    @Test
+    void trendShowsUnchangedWhenLatestEqualsPrevious() {
+        givenChronologicalPrices("1000.00", "1000.00");
+
+        PriceTrendResponse trend = priceAnalysisService.analyzePriceTrend(1L);
+
+        assertThat(trend.direction()).isEqualTo(PriceMovement.UNCHANGED);
+        assertThat(trend.changePercent()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void trendPercentIsRoundedHalfUpToTwoDecimals() {
+        givenChronologicalPrices("3.00", "2.00");
+
+        PriceTrendResponse trend = priceAnalysisService.analyzePriceTrend(1L);
+
+        // -1 / 3 * 100 = -33.333... -> -33.33
+        assertThat(trend.changePercent()).isEqualByComparingTo("-33.33");
+    }
+
+    @Test
+    void trendWithSingleRecordHasNoPreviousPriceOrChange() {
+        givenChronologicalPrices("1000.00");
+
+        PriceTrendResponse trend = priceAnalysisService.analyzePriceTrend(1L);
+
+        assertThat(trend.currentPrice()).isEqualByComparingTo("1000.00");
+        assertThat(trend.previousPrice()).isNull();
+        assertThat(trend.direction()).isNull();
+        assertThat(trend.changeAmount()).isNull();
+        assertThat(trend.changePercent()).isNull();
+        assertThat(trend.averagePrice()).isEqualByComparingTo("1000.00");
+    }
+
+    @Test
+    void trendWithEmptyHistoryHasNoPrices() {
+        givenChronologicalPrices();
+
+        PriceTrendResponse trend = priceAnalysisService.analyzePriceTrend(1L);
+
+        assertThat(trend.currentPrice()).isNull();
+        assertThat(trend.previousPrice()).isNull();
+        assertThat(trend.lowestPrice()).isNull();
+        assertThat(trend.direction()).isNull();
+    }
+
+    @Test
     void throwsWhenProductDoesNotExist() {
         when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -106,6 +181,6 @@ class PriceAnalysisServiceTest {
         for (int i = 0; i < prices.length; i++) {
             history.add(new PriceHistory(product, new BigDecimal(prices[i]), START.plusDays(i)));
         }
-        when(priceHistoryRepository.findByProductIdOrderByRecordedAtDesc(1L)).thenReturn(history.reversed());
+        when(priceHistoryRepository.findByProductIdOrderByRecordedAtDescIdDesc(1L)).thenReturn(history.reversed());
     }
 }

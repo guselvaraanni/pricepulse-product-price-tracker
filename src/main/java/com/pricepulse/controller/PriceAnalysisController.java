@@ -1,6 +1,7 @@
 package com.pricepulse.controller;
 
 import com.pricepulse.dto.PriceAnalysisResponse;
+import com.pricepulse.dto.PriceTrendResponse;
 import com.pricepulse.service.PriceAnalysisService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -27,5 +28,10 @@ public class PriceAnalysisController {
             @Min(value = 1, message = "recent must be at least 1")
             @Max(value = 50, message = "recent must be at most 50") int recent) {
         return priceAnalysisService.analyzePriceHistory(productId, recent);
+    }
+
+    @GetMapping("/price-trend")
+    public PriceTrendResponse analyzePriceTrend(@PathVariable Long productId) {
+        return priceAnalysisService.analyzePriceTrend(productId);
     }
 }

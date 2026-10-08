@@ -50,7 +50,7 @@ public class PriceHistoryService {
             throw new ProductNotFoundException(productId);
         }
 
-        return priceHistoryRepository.findByProductIdOrderByRecordedAtDesc(productId).stream()
+        return priceHistoryRepository.findByProductIdOrderByRecordedAtDescIdDesc(productId).stream()
                 .map(PriceHistoryResponse::from)
                 .toList();
     }

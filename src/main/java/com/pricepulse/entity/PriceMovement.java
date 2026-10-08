@@ -1,4 +1,4 @@
-package com.pricepulse.service;
+package com.pricepulse.entity;
 
 import java.math.BigDecimal;
 

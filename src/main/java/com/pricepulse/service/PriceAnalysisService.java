@@ -2,7 +2,9 @@ package com.pricepulse.service;
 
 import com.pricepulse.dto.PriceAnalysisResponse;
 import com.pricepulse.dto.PriceHistoryResponse;
+import com.pricepulse.dto.PriceTrendResponse;
 import com.pricepulse.entity.PriceHistory;
+import com.pricepulse.entity.PriceMovement;
 import com.pricepulse.entity.Product;
 import com.pricepulse.exception.ProductNotFoundException;
 import com.pricepulse.repository.PriceHistoryRepository;
@@ -35,11 +37,8 @@ public class PriceAnalysisService {
 
     @Transactional(readOnly = true)
     public PriceAnalysisResponse analyzePriceHistory(Long productId, int recentLimit) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId));
-
-        // One query, already sorted by the database (newest first).
-        List<PriceHistory> newestFirst = priceHistoryRepository.findByProductIdOrderByRecordedAtDesc(productId);
+        Product product = findProductOrThrow(productId);
+        List<PriceHistory> newestFirst = findHistoryNewestFirst(productId);
 
         List<BigDecimal> chronologicalPrices = newestFirst.reversed().stream()
                 .map(PriceHistory::getPrice)
@@ -56,13 +55,60 @@ public class PriceAnalysisService {
                 product.getId(),
                 product.getCurrency(),
                 chronologicalPrices.size(),
-                chronologicalPrices.stream().min(Comparator.naturalOrder()).orElse(null),
-                chronologicalPrices.stream().max(Comparator.naturalOrder()).orElse(null),
+                lowest(chronologicalPrices).orElse(null),
+                highest(chronologicalPrices).orElse(null),
                 average(chronologicalPrices).orElse(null),
                 movements.getOrDefault(PriceMovement.INCREASE, 0L),
                 movements.getOrDefault(PriceMovement.DECREASE, 0L),
                 movements.getOrDefault(PriceMovement.UNCHANGED, 0L),
                 recentPrices);
+    }
+
+    @Transactional(readOnly = true)
+    public PriceTrendResponse analyzePriceTrend(Long productId) {
+        Product product = findProductOrThrow(productId);
+        List<PriceHistory> newestFirst = findHistoryNewestFirst(productId);
+
+        List<BigDecimal> prices = newestFirst.stream()
+                .map(PriceHistory::getPrice)
+                .toList();
+
+        Optional<BigDecimal> latestPrice = prices.stream().findFirst();
+        Optional<BigDecimal> previousPrice = prices.stream().skip(1).findFirst();
+
+        // Present only when both prices exist; otherwise empty, never null.
+        Optional<PriceChange> change = previousPrice.flatMap(previous ->
+                latestPrice.map(latest -> PriceChange.between(previous, latest)));
+
+        return new PriceTrendResponse(
+                product.getId(),
+                product.getCurrency(),
+                latestPrice.orElse(null),
+                previousPrice.orElse(null),
+                lowest(prices).orElse(null),
+                highest(prices).orElse(null),
+                average(prices).orElse(null),
+                change.map(PriceChange::direction).orElse(null),
+                change.map(PriceChange::amount).orElse(null),
+                change.map(PriceChange::percent).orElse(null));
+    }
+
+    private Product findProductOrThrow(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+    }
+
+    // One query, already sorted by the database: no need to sort again in Java.
+    private List<PriceHistory> findHistoryNewestFirst(Long productId) {
+        return priceHistoryRepository.findByProductIdOrderByRecordedAtDescIdDesc(productId);
+    }
+
+    private Optional<BigDecimal> lowest(List<BigDecimal> prices) {
+        return prices.stream().min(Comparator.naturalOrder());
+    }
+
+    private Optional<BigDecimal> highest(List<BigDecimal> prices) {
+        return prices.stream().max(Comparator.naturalOrder());
     }
 
     private Optional<BigDecimal> average(List<BigDecimal> prices) {
